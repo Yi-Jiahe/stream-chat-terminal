@@ -1,4 +1,8 @@
+use std::env;
+
 use reqwest::header;
+
+const API_KEY: &str = env!("API_KEY");
 
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
@@ -28,9 +32,9 @@ impl Client {
     }
 
     pub fn get_live_chat_messages(&self, live_chat_id: &str) -> Result<(), String> {
-        let res = match &self.client.get(format!("{}/liveChat/messages?liveChatId={}&part=snippet", BASE_URL, live_chat_id))
+        let res = match &self.client.get(format!("{}/liveChat/messages?key={}&liveChatId={}&part=snippet", BASE_URL, API_KEY, live_chat_id))
             .send() {
-                Ok(res) => res,
+                Ok(res) => dbg!(res),
                 Err(err) => return Err(err.to_string())
             };
 
