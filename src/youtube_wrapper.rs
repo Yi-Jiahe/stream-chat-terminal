@@ -7,7 +7,6 @@ const API_KEY: &str = env!("API_KEY");
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
 pub struct Client {
-    key: String,
     client: reqwest::blocking::Client,
 }
 
@@ -26,21 +25,23 @@ impl Client {
             };
 
         Ok(Client{
-            key: "".to_string(),
             client
         })
     }
 
-    pub fn get_live_chat_messages(&self, live_chat_id: &str) -> Result<(), String> {
-        let res = match &self.client.get(format!("{}/liveChat/messages?key={}&liveChatId={}&part=snippet", BASE_URL, API_KEY, live_chat_id))
-            .send() {
-                Ok(res) => dbg!(res),
-                Err(err) => return Err(err.to_string())
-            };
+    pub fn get_live_chat_messages(&self, stream_id: &str) -> Result<Vec<String>, reqwest::Error> {
+        let live_chat_id = &self.get_stream_id(stream_id)?;
 
-        Ok(())
+        let res = &self.client.get(format!("{}/liveChat/messages?key={}&liveChatId={}&part=snippet", BASE_URL, API_KEY, live_chat_id))
+            .send()?;
+
+        Ok(Vec::new())
     }
-    fn get_stream_id(&self) {
 
+    fn get_stream_id(&self, id: &str) -> Result<String, reqwest::Error> {
+        let res = &self.client.get(format!("{}/liveStreams?key={}&id={}&part=items.snippet.liveChatId", BASE_URL, API_KEY, id))
+            .send()?;
+
+        Ok("".to_string())
     }
 }
