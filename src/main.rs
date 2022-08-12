@@ -20,5 +20,9 @@ fn main() {
         Ok(messages) => messages,
         Err(err) => panic!("{}", err.to_string())
     };
+
+    for message in messages {
+        println!("{}", message);
+    }
 }
 
