@@ -10,13 +10,13 @@ fn main() {
         Err(err) => panic!("{}", err.to_string())
     };
 
-    let mut stream_id = String::new();
+    let mut video_id = String::new();
 
     io::stdin()
-        .read_line(&mut stream_id)
+        .read_line(&mut video_id)
         .expect("Failed to read line");
 
-    let messages = match yt.get_live_chat_messages(&stream_id) {
+    let messages = match yt.get_live_chat_messages(&video_id) {
         Ok(messages) => messages,
         Err(err) => panic!("{}", err.to_string())
     };
