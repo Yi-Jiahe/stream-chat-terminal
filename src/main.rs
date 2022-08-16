@@ -16,7 +16,12 @@ fn main() {
         .read_line(&mut video_id)
         .expect("Failed to read line");
 
-    let messages = match yt.get_live_chat_messages(&video_id) {
+    let live_chat_id = match yt.get_stream_id(&video_id) {
+        Ok(live_chat_id) => live_chat_id,
+        Err(err) => panic!("{}", err.to_string())
+    };
+
+    let messages = match yt.get_live_chat_messages(&live_chat_id) {
         Ok(messages) => messages,
         Err(err) => panic!("{}", err.to_string())
     };

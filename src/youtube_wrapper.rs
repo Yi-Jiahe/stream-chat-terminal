@@ -68,12 +68,7 @@ impl Client {
         })
     }
 
-    pub fn get_live_chat_messages(&self, video_id: &str) -> Result<Vec<String>, String> {
-        let live_chat_id = match self.get_stream_id(video_id) {
-            Ok(live_chat_id) => live_chat_id,
-            Err(err) => return Err(err.to_string())
-        };
-
+    pub fn get_live_chat_messages(&self, live_chat_id: &str) -> Result<Vec<String>, String> {
         let res = match self.client.get(format!("{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails", BASE_URL, API_KEY, live_chat_id))
             .send() {
                 Ok(res) => res,
@@ -106,12 +101,16 @@ impl Client {
         Ok(Vec::new())
     }
 
-    fn get_stream_id(&self, video_id: &str) -> Result<String, String> {
+    pub fn get_stream_id(&self, video_id: &str) -> Result<String, String> {
         let res = match self.client.get(format!("{}/videos?key={}&id={}&part=liveStreamingDetails", BASE_URL, API_KEY, video_id))
             .send() {
                 Ok(res) => res,
                 Err(err) => return Err(err.to_string()), 
             };
+        
+        if !res.status().is_success() {
+            return Err("Invalid response".to_string())
+        }
 
         let body = match res.json::<ResponseBody>() {
             Ok(body) => body,
