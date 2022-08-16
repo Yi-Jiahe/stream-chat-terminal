@@ -7,17 +7,34 @@ const API_KEY: &str = env!("API_KEY");
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
 #[derive(Deserialize, Debug)]
-struct ResponseBody {
-    items: Vec<Item>
+#[serde(tag = "kind")]
+enum Response {
+    #[serde(rename = "youtube#videoListResponse")]
+    VideoList(VideoListResponse),
+    #[serde(rename = "youtube#liveChatMessageListResponse")]
+    LiveChatMessageList(LiveChatMessageListResponse)
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(tag = "kind")]
-enum Item {
-    #[serde(rename = "youtube#video")]
-    Video(Video),
-    #[serde(rename = "youtube#liveChatMessage")]
-    LiveChatMessage(LiveChatMessage)
+#[allow(non_snake_case)]
+#[derive(Deserialize, Debug)]
+struct VideoListResponse {
+    items: Vec<Video>
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Debug)]
+struct LiveChatMessageListResponse {
+    nextPageToken: String,
+    pollingIntervalMillis: u64,
+    pageInfo: PageInfo,
+    items: Vec<LiveChatMessage>
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Debug)]
+struct PageInfo {
+    totalResults: i64,
+    resultsPerPage: i64,
 }
 
 #[allow(non_snake_case)]
@@ -75,27 +92,26 @@ impl Client {
                 Err(err) => return Err(err.to_string())
             };
 
-        let body = match res.json::<ResponseBody>() {
-            Ok(body) => body,
+        let body = match res.json::<Response>() {
+            Ok(body) => match body {
+                Response::LiveChatMessageList(body) => body,
+                _ => return Err("Wrong response type".to_string())
+            },
             Err(err) => return Err(err.to_string()), 
         };
 
-        for item in body.items {
-            match item {
-                Item::LiveChatMessage(message) => {
-                    let display_name = match message.authorDetails {
-                        Some(author_details) => author_details.displayName,
-                        None => return Err("Author details missing".to_string())
-                    };
-                    let display_message = match message.snippet {
-                        Some(snippet) => snippet.displayMessage,
-                        None => return Err("Snippet missing".to_string())
-                    };
+        for message in body.items {
+        
+            let display_name = match message.authorDetails {
+                Some(author_details) => author_details.displayName,
+                None => return Err("Author details missing".to_string())
+            };
+            let display_message = match message.snippet {
+                Some(snippet) => snippet.displayMessage,
+                None => return Err("Snippet missing".to_string())
+            };
 
-                    println!("{}: {}", display_name, display_message);
-                },
-                _ => return Err("Item is not of message type".to_string())
-            }
+            println!("{}: {}", display_name, display_message);
         }
 
         Ok(Vec::new())
@@ -112,19 +128,19 @@ impl Client {
             return Err("Invalid response".to_string())
         }
 
-        let body = match res.json::<ResponseBody>() {
-            Ok(body) => body,
+        let body = match res.json::<Response>() {
+            Ok(body) => match body {
+                Response::VideoList(body) => body,
+                _ => return Err("Wrong response type".to_string())
+            },
             Err(err) => return Err(err.to_string()), 
         };
 
-        let item = body.items[0].clone();
+        let video = body.items[0].clone();
 
-        match item {
-            Item::Video(video) => match video.liveStreamingDetails {
-                Some(live_streaming_details) => return Ok(live_streaming_details.activeLiveChatId.clone()),
-                None => return Err("No live streaming details".to_string())
-            },
-            _ => return Err("Item is not of video type".to_string())
+        match video.liveStreamingDetails {
+            Some(live_streaming_details) => return Ok(live_streaming_details.activeLiveChatId.clone()),
+            None => return Err("No live streaming details".to_string())
         }
     }
 }
