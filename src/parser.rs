@@ -3,8 +3,6 @@ use chrono::{DateTime, Utc, Local};
 
 use crate::youtube_wrapper::Client;
 
-
-
 pub fn print_youtube_messages(video_id: &str, delay_milliseconds: i64) {
     let yt = match Client::new() {
         Ok(client) => client,
