@@ -11,7 +11,7 @@ fn main() {
         .read_line(&mut video_id)
         .expect("Failed to read line");
 
-    parser::print_youtube_messages(&video_id);
+    parser::print_youtube_messages(&video_id, 5000);
  
 }
 

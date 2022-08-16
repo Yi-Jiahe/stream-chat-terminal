@@ -129,7 +129,10 @@ impl Client {
             Err(err) => return Err(err.to_string()), 
         };
 
-        let video = body.items[0].clone();
+        let video = match body.items.first() {
+            Some(video) => video.clone(),
+            None => return Err("No videos found".to_string())
+        };
 
         match video.liveStreamingDetails {
             Some(live_streaming_details) => return Ok(live_streaming_details.activeLiveChatId.clone()),
