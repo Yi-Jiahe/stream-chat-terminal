@@ -53,6 +53,7 @@ struct LiveChatMessage {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug, Clone)]
 struct LiveChatMessageSnippet {
+    publishedAt: String,
     displayMessage: String
 }
 
@@ -100,18 +101,21 @@ impl Client {
             Err(err) => return Err(err.to_string()), 
         };
 
+        // println!("{}", body.pageInfo.totalResults);
+        // println!("{}", body.items.len());
+        println!("{}", body.pollingIntervalMillis);
+
         for message in body.items {
-        
             let display_name = match message.authorDetails {
                 Some(author_details) => author_details.displayName,
                 None => return Err("Author details missing".to_string())
             };
-            let display_message = match message.snippet {
-                Some(snippet) => snippet.displayMessage,
+            let (publishedAt, display_message) = match message.snippet {
+                Some(snippet) => (snippet.publishedAt, snippet.displayMessage),
                 None => return Err("Snippet missing".to_string())
             };
 
-            println!("{}: {}", display_name, display_message);
+            println!("{} {}: {}", publishedAt, display_name, display_message);
         }
 
         Ok(Vec::new())
