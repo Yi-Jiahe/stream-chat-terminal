@@ -23,18 +23,18 @@ struct VideoListResponse {
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug)]
-struct LiveChatMessageListResponse {
-    nextPageToken: String,
-    pollingIntervalMillis: u64,
-    pageInfo: PageInfo,
-    items: Vec<LiveChatMessage>
+pub struct LiveChatMessageListResponse {
+    pub nextPageToken: String,
+    pub pollingIntervalMillis: u64,
+    pub pageInfo: PageInfo,
+    pub items: Vec<LiveChatMessage>
 }
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug)]
-struct PageInfo {
-    totalResults: i64,
-    resultsPerPage: i64,
+pub struct PageInfo {
+    pub totalResults: i64,
+    pub resultsPerPage: i64,
 }
 
 #[allow(non_snake_case)]
@@ -45,22 +45,22 @@ struct Video {
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug, Clone)]
-struct LiveChatMessage {
-    snippet: Option<LiveChatMessageSnippet>,
-    authorDetails: Option<LiveChatMessageAuthorDetails>
+pub struct LiveChatMessage {
+    pub snippet: Option<LiveChatMessageSnippet>,
+    pub authorDetails: Option<LiveChatMessageAuthorDetails>
 }
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug, Clone)]
-struct LiveChatMessageSnippet {
-    publishedAt: String,
-    displayMessage: String
+pub struct LiveChatMessageSnippet {
+    pub publishedAt: String,
+    pub displayMessage: String
 }
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug, Clone)]
-struct LiveChatMessageAuthorDetails {
-    displayName: String
+pub struct LiveChatMessageAuthorDetails {
+    pub displayName: String
 }
 
 #[allow(non_snake_case)]
@@ -86,8 +86,14 @@ impl Client {
         })
     }
 
-    pub fn get_live_chat_messages(&self, live_chat_id: &str) -> Result<Vec<String>, String> {
-        let res = match self.client.get(format!("{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails", BASE_URL, API_KEY, live_chat_id))
+    pub fn get_live_chat_messages(&self, live_chat_id: &str, next_page_token: &str) -> Result<LiveChatMessageListResponse, String> {
+        let url = if next_page_token == "" {
+            format!("{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails", BASE_URL, API_KEY, live_chat_id)
+        } else {
+            format!("{}/liveChat/messages?key={}&liveChatId={}&page_token={}&part=snippet,authorDetails", BASE_URL, API_KEY, live_chat_id, next_page_token)
+        };
+
+        let res = match self.client.get(url)
             .send() {
                 Ok(res) => res,
                 Err(err) => return Err(err.to_string())
@@ -101,24 +107,7 @@ impl Client {
             Err(err) => return Err(err.to_string()), 
         };
 
-        // println!("{}", body.pageInfo.totalResults);
-        // println!("{}", body.items.len());
-        println!("{}", body.pollingIntervalMillis);
-
-        for message in body.items {
-            let display_name = match message.authorDetails {
-                Some(author_details) => author_details.displayName,
-                None => return Err("Author details missing".to_string())
-            };
-            let (publishedAt, display_message) = match message.snippet {
-                Some(snippet) => (snippet.publishedAt, snippet.displayMessage),
-                None => return Err("Snippet missing".to_string())
-            };
-
-            println!("{} {}: {}", publishedAt, display_name, display_message);
-        }
-
-        Ok(Vec::new())
+        Ok(body)
     }
 
     pub fn get_stream_id(&self, video_id: &str) -> Result<String, String> {
