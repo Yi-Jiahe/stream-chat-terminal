@@ -7,6 +7,10 @@ struct Args {
     /// Show config path
     #[clap(long, short, action)]
     config_path: bool,
+
+    /// Set config
+    #[clap(long, short, action)]
+    set_config: bool,
 }
 
 use serde::{Deserialize, Serialize};
@@ -33,7 +37,7 @@ fn main() {
     if args.config_path {
         let configuration_file_path = confy::get_configuration_file_path("stream-chat-terminal", None)
             .expect("Unable to get config file path");
-        println!("{}", configuration_file_path.display();
+        println!("{}", configuration_file_path.display());
         return;
     }
 
@@ -41,7 +45,7 @@ fn main() {
 
     dbg!(&cfg);
 
-    if cfg.api_key.is_none() {
+    if args.set_config {
         let mut api_key = String::new();
 
         println!("Please provide your YouTube API key: (None)");
@@ -61,7 +65,9 @@ fn main() {
         dbg!(&cfg);
 
         confy::store("my-app-name", None, &cfg).expect("Failed to store config");
-    }
+
+        return;
+    }        
 
     let yt = match Client::new(cfg.api_key) {
         Ok(client) => client,
