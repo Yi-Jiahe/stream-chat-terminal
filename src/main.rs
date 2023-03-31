@@ -24,10 +24,12 @@ fn main() {
     if cfg.api_key.is_none() {
         let mut api_key = String::new();
 
-        println!("Please provide your YouTube API key: ");
+        println!("Please provide your YouTube API key: (None)");
         io::stdin()
             .read_line(&mut api_key)
             .expect("Failed to read line");
+
+        api_key = api_key.trim().to_string();
 
         cfg.api_key = if api_key.is_empty() {
             println!("{}", api_key.is_empty());
@@ -35,6 +37,8 @@ fn main() {
         } else {
             Some(api_key)
         };
+
+        dbg!(&cfg);
 
         confy::store("my-app-name", None, &cfg).expect("Failed to store config");
     }
