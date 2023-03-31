@@ -1,4 +1,13 @@
-use std::io;
+use clap::Parser;
+
+/// Bring stream chat to your terminal
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Show config path
+    #[clap(long, short, action)]
+    config_path: bool,
+}
 
 use serde::{Deserialize, Serialize};
 
@@ -11,12 +20,23 @@ impl ::std::default::Default for Config {
     fn default() -> Self { Self { api_key: None } }
 }
 
+use std::io;
+
 use stream_chat_terminal::parser;
 use stream_chat_terminal::youtube_wrapper::Client;
 
 const MESSAGE_DELAY_MILLIS: i64 = 5000;
 
 fn main() {
+    let args = Args::parse();
+
+    if args.config_path {
+        let configuration_file_path = confy::get_configuration_file_path("stream-chat-terminal", None)
+            .expect("Unable to get config file path");
+        println!("{}", configuration_file_path.display();
+        return;
+    }
+
     let mut cfg: Config = confy::load("stream-chat-terminal", None).expect("Unable to load config");
 
     dbg!(&cfg);
