@@ -64,7 +64,7 @@ fn main() {
 
         dbg!(&cfg);
 
-        confy::store("my-app-name", None, &cfg).expect("Failed to store config");
+        confy::store("stream-chat-terminal", None, &cfg).expect("Failed to store config");
 
         return;
     }        
