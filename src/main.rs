@@ -11,6 +11,9 @@ struct Args {
     /// Set config
     #[clap(long, short, action)]
     set_config: bool,
+
+    #[clap(long, short, action)]
+    google_oauth: bool,
 }
 
 use serde::{Deserialize, Serialize};
@@ -26,6 +29,7 @@ impl ::std::default::Default for Config {
 
 use std::io;
 
+use stream_chat_terminal::google_oauth;
 use stream_chat_terminal::parser;
 use stream_chat_terminal::youtube_wrapper::Client;
 
@@ -68,6 +72,10 @@ fn main() {
 
         return;
     }        
+
+    if args.google_oauth {
+        google_oauth::oauth_flow();
+    }
 
     let yt = match Client::new(cfg.api_key) {
         Ok(client) => client,

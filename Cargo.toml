@@ -11,3 +11,5 @@ serde = {version = "1.0.137", features = ["derive"]}
 chrono = "0.4"
 confy = "0.5.1"
 clap = { version = "4.2.1", features = ["derive"] }
+oauth2 = "4.3.0"
+url = "2.3.1"
