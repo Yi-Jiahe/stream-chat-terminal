@@ -16,19 +16,9 @@ struct Args {
     google_oauth: bool,
 }
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Config {
-    api_key: Option<String>,
-}
-
-impl ::std::default::Default for Config {
-    fn default() -> Self { Self { api_key: None } }
-}
-
 use std::io;
 
+use stream_chat_terminal::config::Config;
 use stream_chat_terminal::google_oauth;
 use stream_chat_terminal::parser;
 use stream_chat_terminal::youtube_wrapper::Client;
@@ -49,35 +39,11 @@ fn main() {
 
     dbg!(&cfg);
 
-    if args.set_config {
-        let mut api_key = String::new();
-
-        println!("Please provide your YouTube API key: (None)");
-        io::stdin()
-            .read_line(&mut api_key)
-            .expect("Failed to read line");
-
-        api_key = api_key.trim().to_string();
-
-        cfg.api_key = if api_key.is_empty() {
-            println!("{}", api_key.is_empty());
-            None
-        } else {
-            Some(api_key)
-        };
-
-        dbg!(&cfg);
-
-        confy::store("stream-chat-terminal", None, &cfg).expect("Failed to store config");
-
-        return;
-    }        
-
     if args.google_oauth {
-        google_oauth::oauth_flow();
+        google_oauth::oauth_flow(&mut cfg);
     }
 
-    let yt = match Client::new(cfg.api_key) {
+    let yt = match Client::new(cfg.google_access_token) {
         Ok(client) => client,
         Err(err) => panic!("{}", err.to_string()),
     };

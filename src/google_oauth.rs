@@ -13,7 +13,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 use url::Url;
 
-pub fn oauth_flow() {
+use crate::config::Config;
+
+pub fn oauth_flow(cfg: &mut Config) {
     let auth_url = AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())
         .expect("Invalid authorization endpoint URL");
     let token_url = TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
@@ -105,38 +107,27 @@ pub fn oauth_flow() {
             );
             stream.write_all(response.as_bytes()).unwrap();
 
-            println!("Google returned the following code:\n{}\n", code.secret());
-            println!(
-                "Google returned the following state:\n{} (expected `{}`)\n",
-                state.secret(),
-                csrf_state.secret()
-            );
-
             // Exchange the code with a token.
             let token_response = client
                 .exchange_code(code)
                 .set_pkce_verifier(pkce_code_verifier)
-                .request(http_client);
-
-            println!(
-                "Google returned the following token:\n{:?}\n",
-                token_response
-            );
-
-            // Revoke the obtained token
-            let token_response = token_response.unwrap();
-            let token_to_revoke: StandardRevocableToken = match token_response.refresh_token() {
-                Some(token) => token.into(),
-                None => token_response.access_token().into(),
-            };
-
-            client
-                .revoke_token(token_to_revoke)
-                .unwrap()
                 .request(http_client)
-                .expect("Failed to revoke token");
+                .unwrap();
+            
+            let access_token = token_response
+                .access_token()
+                .secret();
+            let refresh_token = token_response
+                .refresh_token()
+                .expect("Refresh token not provided")
+                .secret();
+            println!("Access Token: {}, Refresh Token: {}", access_token, refresh_token);
 
-            // The server will terminate itself after revoking the token.
+            cfg.google_access_token = Some(access_token.to_string());
+            cfg.google_refresh_token = Some(refresh_token.to_string());
+            confy::store("stream-chat-terminal", None, &cfg).expect("Failed to store config");
+
+            // The server will terminate itself after the flow is completed
             break;
         }
     }
