@@ -32,7 +32,7 @@ pub fn print_youtube_messages(yt: Client, video_id: &str, delay_milliseconds: i6
                 None => continue,
             };
 
-            let published_dt = match DateTime::parse_from_rfc3339(&published_at) {
+            let published_dt = match DateTime::parse_from_rfc3339(&published_at.unwrap()) {
                 Ok(dt) => dt,
                 Err(err) => panic!("{}", err),
             };
@@ -46,7 +46,7 @@ pub fn print_youtube_messages(yt: Client, video_id: &str, delay_milliseconds: i6
             }
 
             // println!("{} {}: {}", published_dt.with_timezone(&Local).format("%H:%M:%S").to_string(), display_name, display_message);
-            println!("{}: {}", display_name, display_message);
+            println!("{}: {}", display_name, display_message.unwrap());
         }
 
         next_page_token = body.nextPageToken.clone();

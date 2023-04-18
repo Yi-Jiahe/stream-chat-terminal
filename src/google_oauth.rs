@@ -115,15 +115,16 @@ pub fn oauth_flow(cfg: &mut Config) {
                 .set_pkce_verifier(pkce_code_verifier)
                 .request(http_client)
                 .unwrap();
-            
-            let access_token = token_response
-                .access_token()
-                .secret();
+
+            let access_token = token_response.access_token().secret();
             let refresh_token = token_response
                 .refresh_token()
                 .expect("Refresh token not provided")
                 .secret();
-            println!("Access Token: {}, Refresh Token: {}", access_token, refresh_token);
+            println!(
+                "Access Token: {}, Refresh Token: {}",
+                access_token, refresh_token
+            );
 
             cfg.google_access_token = Some(access_token.to_string());
             cfg.google_refresh_token = Some(refresh_token.to_string());

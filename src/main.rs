@@ -29,8 +29,9 @@ fn main() {
     let args = Args::parse();
 
     if args.config_path {
-        let configuration_file_path = confy::get_configuration_file_path("stream-chat-terminal", None)
-            .expect("Unable to get config file path");
+        let configuration_file_path =
+            confy::get_configuration_file_path("stream-chat-terminal", None)
+                .expect("Unable to get config file path");
         println!("{}", configuration_file_path.display());
         return;
     }

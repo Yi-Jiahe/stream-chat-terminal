@@ -7,8 +7,10 @@ pub struct Config {
 }
 
 impl ::std::default::Default for Config {
-    fn default() -> Self { Self { 
-        google_access_token: None,
-        google_refresh_token: None,
-    } }
+    fn default() -> Self {
+        Self {
+            google_access_token: None,
+            google_refresh_token: None,
+        }
+    }
 }

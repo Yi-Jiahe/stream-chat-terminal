@@ -4,7 +4,7 @@ const GOOGLE_API_KEY: &str = env!("GOOGLE_API_KEY");
 
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "kind")]
@@ -44,21 +44,30 @@ struct Video {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct LiveChatMessage {
     pub snippet: Option<LiveChatMessageSnippet>,
     pub authorDetails: Option<LiveChatMessageAuthorDetails>,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct LiveChatMessageSnippet {
-    pub publishedAt: String,
-    pub displayMessage: String,
+    pub r#type: Option<String>,
+    pub liveChatId: Option<String>,
+    pub publishedAt: Option<String>,
+    pub displayMessage: Option<String>,
+    pub textMessageDetails: Option<LiveChatMessageSnippetTextMessageDetails>,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct LiveChatMessageSnippetTextMessageDetails {
+    pub messageText: String,
+}
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LiveChatMessageAuthorDetails {
     pub displayName: String,
 }
@@ -69,6 +78,7 @@ struct LiveStreamingDetails {
     activeLiveChatId: String,
 }
 
+
 pub struct Client {
     client: reqwest::blocking::Client,
     access_token: Option<String>,
@@ -76,28 +86,31 @@ pub struct Client {
 
 impl Client {
     pub fn new(access_token: Option<String>) -> Result<Client, String> {
-        Ok(
-            Client {
-                client: reqwest::blocking::Client::builder().build().unwrap(),
-                access_token: access_token
-            }
-        )
+        Ok(Client {
+            client: reqwest::blocking::Client::builder().build().unwrap(),
+            access_token: access_token,
+        })
     }
 
-    fn get(&self, url: String) -> Result<reqwest::blocking::Response, reqwest::Error>{
+    fn get(&self, url: String) -> Result<reqwest::blocking::Response, reqwest::Error> {
         let req = if let Some(token) = &self.access_token {
-            self.client.get(url).header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
+            self.client
+                .get(url)
+                .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
         } else {
             self.client.get(url)
         };
 
         let res = req.send();
 
-        return res
+        return res;
     }
 
     pub fn get_stream_id(&self, video_id: &str) -> Result<String, String> {
-        let url = format!("{}/videos?key={}&id={}&part=liveStreamingDetails", BASE_URL, GOOGLE_API_KEY, video_id);
+        let url = format!(
+            "{}/videos?key={}&id={}&part=liveStreamingDetails",
+            BASE_URL, GOOGLE_API_KEY, video_id
+        );
         let res = self.get(url).unwrap();
 
         if !res.status().is_success() {
@@ -132,7 +145,9 @@ impl Client {
     ) -> Result<LiveChatMessageListResponse, String> {
         let url = if next_page_token == "" {
             format!(
-                "{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails", BASE_URL, GOOGLE_API_KEY, live_chat_id )
+                "{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails",
+                BASE_URL, GOOGLE_API_KEY, live_chat_id
+            )
         } else {
             format!("{}/liveChat/messages?key={}&liveChatId={}&page_token={}&part=snippet,authorDetails", BASE_URL, GOOGLE_API_KEY, live_chat_id, next_page_token)
         };
@@ -151,5 +166,34 @@ impl Client {
         };
 
         Ok(body)
+    }
+
+    pub fn insert_live_chat_message(
+        &self,
+        live_chat_id: &str,
+        message_text: &str,
+    ) {
+        let url = format!("{}/liveChat/messages?part=snippet&key={}", BASE_URL, GOOGLE_API_KEY);
+        if let Some(token) = &self.access_token {
+            let body = LiveChatMessage {
+                snippet: Some(LiveChatMessageSnippet {
+                    r#type: Some("".to_string()),
+                    liveChatId: Some(live_chat_id.to_string()),
+                    textMessageDetails: Some(LiveChatMessageSnippetTextMessageDetails{
+                        messageText: message_text.to_string(),
+                    }),
+                    ..LiveChatMessageSnippet::default()
+                }),
+                ..LiveChatMessage::default()
+            };
+
+            self.client
+                .post(url)
+                .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
+                .json(&body)
+                .send();
+        } else {
+            println!("Please complete the OAuth flow to post messages");
+        }
     }
 }
