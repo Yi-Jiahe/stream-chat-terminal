@@ -3,12 +3,7 @@ use std::{thread, time};
 
 use crate::youtube_wrapper::Client;
 
-pub fn print_youtube_messages(yt: Client, video_id: &str, delay_milliseconds: i64) {
-    let live_chat_id = match yt.get_stream_id(&video_id) {
-        Ok(live_chat_id) => live_chat_id,
-        Err(err) => panic!("{}", err.to_string()),
-    };
-
+pub fn print_youtube_messages(yt: Client, live_chat_id: &str, delay_milliseconds: i64) {
     let mut next_page_token: String = String::from("");
 
     loop {

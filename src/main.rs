@@ -14,6 +14,9 @@ struct Args {
 
     #[clap(long, short, action)]
     google_oauth: bool,
+
+    #[clap(long, short, action)]
+    post: bool,
 }
 
 use std::io;
@@ -57,5 +60,22 @@ fn main() {
         .read_line(&mut video_id)
         .expect("Failed to read line");
 
-    parser::print_youtube_messages(yt, &video_id, MESSAGE_DELAY_MILLIS);
+    let live_chat_id = match yt.get_stream_id(&video_id) {
+        Ok(live_chat_id) => live_chat_id,
+        Err(err) => panic!("{}", err.to_string()),
+    };
+
+    if !args.post {
+        parser::print_youtube_messages(yt, &live_chat_id, MESSAGE_DELAY_MILLIS);
+    } else {
+        let mut message = String::new();
+
+        loop {
+            io::stdin()
+            .read_line(&mut message)
+            .expect("Failed to read line");
+
+            yt.insert_live_chat_message(&live_chat_id, &message);
+        }
+    }
 }

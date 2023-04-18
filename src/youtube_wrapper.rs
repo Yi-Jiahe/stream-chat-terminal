@@ -177,7 +177,7 @@ impl Client {
         if let Some(token) = &self.access_token {
             let body = LiveChatMessage {
                 snippet: Some(LiveChatMessageSnippet {
-                    r#type: Some("".to_string()),
+                    r#type: Some("textMessageEvent".to_string()),
                     liveChatId: Some(live_chat_id.to_string()),
                     textMessageDetails: Some(LiveChatMessageSnippetTextMessageDetails{
                         messageText: message_text.to_string(),
@@ -187,11 +187,13 @@ impl Client {
                 ..LiveChatMessage::default()
             };
 
-            self.client
+            let res = self.client
                 .post(url)
                 .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
                 .json(&body)
                 .send();
+
+            dbg!(&res);
         } else {
             println!("Please complete the OAuth flow to post messages");
         }
