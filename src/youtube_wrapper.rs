@@ -91,11 +91,7 @@ impl Client {
             self.client.get(url)
         };
 
-        dbg!(&req);
-
         let res = req.send();
-
-        dbg!(&res);
 
         return res
     }
