@@ -191,9 +191,12 @@ impl Client {
                 .post(url)
                 .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
                 .json(&body)
-                .send();
+                .send()
+                .unwrap();
 
-            dbg!(&res);
+            if res.status() != reqwest::StatusCode::OK {
+                println!("Non 200 response code: {}, Try refreshing your OAuth Token", res.status());
+            }
         } else {
             println!("Please complete the OAuth flow to post messages");
         }

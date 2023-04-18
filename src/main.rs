@@ -68,9 +68,9 @@ fn main() {
     if !args.post {
         parser::print_youtube_messages(yt, &live_chat_id, MESSAGE_DELAY_MILLIS);
     } else {
-        let mut message = String::new();
-
         loop {
+            let mut message = String::new();
+
             io::stdin()
             .read_line(&mut message)
             .expect("Failed to read line");
