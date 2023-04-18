@@ -1,6 +1,6 @@
 use std::env;
 
-const CLIENT_ID: &str = env!("CLIENT_ID");
+const GOOGLE_API_KEY: &str = env!("GOOGLE_API_KEY");
 
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
@@ -96,14 +96,14 @@ impl Client {
                 BASE_URL,
                 match &self.api_key {
                     Some(api_key) => api_key,
-                    None => CLIENT_ID,
+                    None => GOOGLE_API_KEY,
                 },
                 live_chat_id
             )
         } else {
             format!("{}/liveChat/messages?key={}&liveChatId={}&page_token={}&part=snippet,authorDetails", BASE_URL, match &self.api_key {
                 Some(api_key) => api_key,
-                None => CLIENT_ID
+                None => GOOGLE_API_KEY
             },
             live_chat_id, next_page_token)
         };
@@ -130,7 +130,7 @@ impl Client {
             "{}",
             match &self.api_key {
                 Some(api_key) => api_key,
-                None => CLIENT_ID,
+                None => GOOGLE_API_KEY,
             }
         );
 
@@ -141,7 +141,7 @@ impl Client {
                 BASE_URL,
                 match &self.api_key {
                     Some(api_key) => api_key,
-                    None => CLIENT_ID,
+                    None => GOOGLE_API_KEY,
                 },
                 video_id
             ))
