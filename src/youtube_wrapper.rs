@@ -71,85 +71,38 @@ struct LiveStreamingDetails {
 
 pub struct Client {
     client: reqwest::blocking::Client,
-    api_key: Option<String>,
+    access_token: Option<String>,
 }
 
 impl Client {
-    pub fn new(api_key: Option<String>) -> Result<Client, String> {
-        Ok(Client {
-            client: match reqwest::blocking::Client::builder().build() {
-                Ok(client) => client,
-                Err(err) => return Err(err.to_string()),
-            },
-            api_key: api_key
-        })
+    pub fn new(access_token: Option<String>) -> Result<Client, String> {
+        Ok(
+            Client {
+                client: reqwest::blocking::Client::builder().build().unwrap(),
+                access_token: access_token
+            }
+        )
     }
 
-    pub fn get_live_chat_messages(
-        &self,
-        live_chat_id: &str,
-        next_page_token: &str,
-    ) -> Result<LiveChatMessageListResponse, String> {
-        let url = if next_page_token == "" {
-            format!(
-                "{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails",
-                BASE_URL,
-                match &self.api_key {
-                    Some(api_key) => api_key,
-                    None => GOOGLE_API_KEY,
-                },
-                live_chat_id
-            )
+    fn get(&self, url: String) -> Result<reqwest::blocking::Response, reqwest::Error>{
+        let req = if let Some(token) = &self.access_token {
+            self.client.get(url).header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
         } else {
-            format!("{}/liveChat/messages?key={}&liveChatId={}&page_token={}&part=snippet,authorDetails", BASE_URL, match &self.api_key {
-                Some(api_key) => api_key,
-                None => GOOGLE_API_KEY
-            },
-            live_chat_id, next_page_token)
+            self.client.get(url)
         };
 
-        let res = match self.client.get(url).send() {
-            Ok(res) => res,
-            Err(err) => return Err(err.to_string()),
-        };
+        dbg!(&req);
 
-        let body = match res.json::<Response>() {
-            Ok(body) => match body {
-                Response::LiveChatMessageList(body) => body,
-                _ => return Err("Wrong response type".to_string()),
-            },
-            Err(err) => return Err(err.to_string()),
-        };
+        let res = req.send();
 
-        Ok(body)
+        dbg!(&res);
+
+        return res
     }
 
     pub fn get_stream_id(&self, video_id: &str) -> Result<String, String> {
-        dbg!("{}", &self.api_key);
-        println!(
-            "{}",
-            match &self.api_key {
-                Some(api_key) => api_key,
-                None => GOOGLE_API_KEY,
-            }
-        );
-
-        let res = match self
-            .client
-            .get(format!(
-                "{}/videos?key={}&id={}&part=liveStreamingDetails",
-                BASE_URL,
-                match &self.api_key {
-                    Some(api_key) => api_key,
-                    None => GOOGLE_API_KEY,
-                },
-                video_id
-            ))
-            .send()
-        {
-            Ok(res) => res,
-            Err(err) => return Err(err.to_string()),
-        };
+        let url = format!("{}/videos?key={}&id={}&part=liveStreamingDetails", BASE_URL, GOOGLE_API_KEY, video_id);
+        let res = self.get(url).unwrap();
 
         if !res.status().is_success() {
             return Err("Invalid response".to_string());
@@ -174,5 +127,33 @@ impl Client {
             }
             None => return Err("No live streaming details".to_string()),
         }
+    }
+
+    pub fn get_live_chat_messages(
+        &self,
+        live_chat_id: &str,
+        next_page_token: &str,
+    ) -> Result<LiveChatMessageListResponse, String> {
+        let url = if next_page_token == "" {
+            format!(
+                "{}/liveChat/messages?key={}&liveChatId={}&part=snippet,authorDetails", BASE_URL, GOOGLE_API_KEY, live_chat_id )
+        } else {
+            format!("{}/liveChat/messages?key={}&liveChatId={}&page_token={}&part=snippet,authorDetails", BASE_URL, GOOGLE_API_KEY, live_chat_id, next_page_token)
+        };
+
+        let res = match self.get(url) {
+            Ok(res) => res,
+            Err(err) => return Err(err.to_string()),
+        };
+
+        let body = match res.json::<Response>() {
+            Ok(body) => match body {
+                Response::LiveChatMessageList(body) => body,
+                _ => return Err("Wrong response type".to_string()),
+            },
+            Err(err) => return Err(err.to_string()),
+        };
+
+        Ok(body)
     }
 }

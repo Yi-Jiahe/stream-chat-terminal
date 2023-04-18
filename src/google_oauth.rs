@@ -46,12 +46,14 @@ pub fn oauth_flow(cfg: &mut Config) {
     // Generate the authorization URL to which we'll redirect the user.
     let (authorize_url, csrf_state) = client
         .authorize_url(CsrfToken::new_random)
-        // This example is requesting access to the "calendar" features and the user's profile.
         .add_scope(Scope::new(
-            "https://www.googleapis.com/auth/calendar".to_string(),
+            "https://www.googleapis.com/auth/youtube.readonly".to_string(),
         ))
         .add_scope(Scope::new(
-            "https://www.googleapis.com/auth/plus.me".to_string(),
+            "https://www.googleapis.com/auth/youtube".to_string(),
+        ))
+        .add_scope(Scope::new(
+            "https://www.googleapis.com/auth/youtube.force-ssl".to_string(),
         ))
         .set_pkce_challenge(pkce_code_challenge)
         .url();
