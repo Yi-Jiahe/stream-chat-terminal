@@ -1,7 +1,7 @@
 const GOOGLE_CLIENT_ID: &str = env!("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET: &str = env!("GOOGLE_CLIENT_SECRET");
 
-use oauth2::{basic::BasicClient, revocation::StandardRevocableToken, TokenResponse};
+use oauth2::{basic::BasicClient, TokenResponse};
 // Alternatively, this can be oauth2::curl::http_client or a custom.
 use oauth2::reqwest::http_client;
 use oauth2::{
@@ -44,7 +44,7 @@ pub fn oauth_flow(cfg: &mut Config) {
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
 
     // Generate the authorization URL to which we'll redirect the user.
-    let (authorize_url, csrf_state) = client
+    let (authorize_url, _csrf_state) = client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new(
             "https://www.googleapis.com/auth/youtube.readonly".to_string(),
@@ -68,7 +68,6 @@ pub fn oauth_flow(cfg: &mut Config) {
     for stream in listener.incoming() {
         if let Ok(mut stream) = stream {
             let code;
-            let state;
             {
                 let mut reader = BufReader::new(&stream);
 
@@ -88,17 +87,6 @@ pub fn oauth_flow(cfg: &mut Config) {
 
                 let (_, value) = code_pair;
                 code = AuthorizationCode::new(value.into_owned());
-
-                let state_pair = url
-                    .query_pairs()
-                    .find(|pair| {
-                        let &(ref key, _) = pair;
-                        key == "state"
-                    })
-                    .unwrap();
-
-                let (_, value) = state_pair;
-                state = CsrfToken::new(value.into_owned());
             }
 
             let message = "Go back to your terminal :)";

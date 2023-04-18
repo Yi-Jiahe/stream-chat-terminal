@@ -1,5 +1,7 @@
-use chrono::{DateTime, Local, Utc};
 use std::{thread, time};
+
+use ansi_term::Colour;
+use chrono::{DateTime, Utc};
 
 use crate::youtube_wrapper::Client;
 
@@ -18,8 +20,8 @@ pub fn print_youtube_messages(yt: Client, live_chat_id: &str, delay_milliseconds
         // println!("{}", body.items.len());
 
         for message in body.items {
-            let display_name = match message.authorDetails {
-                Some(author_details) => author_details.displayName,
+            let (display_name, is_chat_sponsor) = match message.authorDetails {
+                Some(author_details) => (author_details.displayName, author_details.isChatSponsor),
                 None => continue,
             };
             let (published_at, display_message) = match message.snippet {
@@ -41,7 +43,15 @@ pub fn print_youtube_messages(yt: Client, live_chat_id: &str, delay_milliseconds
             }
 
             // println!("{} {}: {}", published_dt.with_timezone(&Local).format("%H:%M:%S").to_string(), display_name, display_message);
-            println!("{}: {}", display_name, display_message.unwrap());
+            println!(
+                "{}: {}",
+                if is_chat_sponsor {
+                    Colour::Green.bold().paint(display_name)
+                } else {
+                    display_name.into()
+                },
+                display_message.unwrap()
+            );
         }
 
         next_page_token = body.nextPageToken.clone();

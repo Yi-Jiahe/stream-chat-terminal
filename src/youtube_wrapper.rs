@@ -70,6 +70,7 @@ pub struct LiveChatMessageSnippetTextMessageDetails {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LiveChatMessageAuthorDetails {
     pub displayName: String,
+    pub isChatSponsor: bool,
 }
 
 #[allow(non_snake_case)]
@@ -77,7 +78,6 @@ pub struct LiveChatMessageAuthorDetails {
 struct LiveStreamingDetails {
     activeLiveChatId: String,
 }
-
 
 pub struct Client {
     client: reqwest::blocking::Client,
@@ -168,18 +168,17 @@ impl Client {
         Ok(body)
     }
 
-    pub fn insert_live_chat_message(
-        &self,
-        live_chat_id: &str,
-        message_text: &str,
-    ) {
-        let url = format!("{}/liveChat/messages?part=snippet&key={}", BASE_URL, GOOGLE_API_KEY);
+    pub fn insert_live_chat_message(&self, live_chat_id: &str, message_text: &str) {
+        let url = format!(
+            "{}/liveChat/messages?part=snippet&key={}",
+            BASE_URL, GOOGLE_API_KEY
+        );
         if let Some(token) = &self.access_token {
             let body = LiveChatMessage {
                 snippet: Some(LiveChatMessageSnippet {
                     r#type: Some("textMessageEvent".to_string()),
                     liveChatId: Some(live_chat_id.to_string()),
-                    textMessageDetails: Some(LiveChatMessageSnippetTextMessageDetails{
+                    textMessageDetails: Some(LiveChatMessageSnippetTextMessageDetails {
                         messageText: message_text.to_string(),
                     }),
                     ..LiveChatMessageSnippet::default()
@@ -187,7 +186,8 @@ impl Client {
                 ..LiveChatMessage::default()
             };
 
-            let res = self.client
+            let res = self
+                .client
                 .post(url)
                 .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
                 .json(&body)
@@ -195,7 +195,10 @@ impl Client {
                 .unwrap();
 
             if res.status() != reqwest::StatusCode::OK {
-                println!("Non 200 response code: {}, Try refreshing your OAuth Token", res.status());
+                println!(
+                    "Non 200 response code: {}, Try refreshing your OAuth Token",
+                    res.status()
+                );
             }
         } else {
             println!("Please complete the OAuth flow to post messages");

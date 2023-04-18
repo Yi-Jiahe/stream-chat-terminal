@@ -72,8 +72,8 @@ fn main() {
             let mut message = String::new();
 
             io::stdin()
-            .read_line(&mut message)
-            .expect("Failed to read line");
+                .read_line(&mut message)
+                .expect("Failed to read line");
 
             yt.insert_live_chat_message(&live_chat_id, &message);
         }
