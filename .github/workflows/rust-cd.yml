@@ -23,8 +23,7 @@ jobs:
       run: cargo test --verbose
     - name: Artifacts
       run: |
-        ls -a
-        ls -a target/debug
+        ls target/debug
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
