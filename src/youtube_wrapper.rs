@@ -101,9 +101,9 @@ impl Client {
             self.client.get(url)
         };
 
-        let res = req.send();
+        let res = req.send()?;
 
-        return res;
+        return Ok(res);
     }
 
     pub fn get_stream_id(&self, video_id: &str) -> Result<String, String> {

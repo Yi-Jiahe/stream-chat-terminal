@@ -20,6 +20,9 @@ struct Args {
 }
 
 use std::io;
+use std::{thread, time};
+
+use chrono::{DateTime, Utc};
 
 use stream_chat_terminal::config::Config;
 use stream_chat_terminal::google_oauth;
@@ -66,7 +69,7 @@ fn main() {
     };
 
     if !args.post {
-        parser::print_youtube_messages(yt, &live_chat_id, MESSAGE_DELAY_MILLIS);
+        poll_live_chat_messages(yt, &live_chat_id, MESSAGE_DELAY_MILLIS);
     } else {
         loop {
             let mut message = String::new();
@@ -76,6 +79,38 @@ fn main() {
                 .expect("Failed to read line");
 
             yt.insert_live_chat_message(&live_chat_id, &message);
+        }
+    }
+}
+
+pub fn poll_live_chat_messages(yt: Client, live_chat_id: &str, delay_milliseconds: i64) {
+    let mut next_page_token: String = String::from("");
+
+    loop {
+        let body = match yt.get_live_chat_messages(&live_chat_id, &next_page_token) {
+            Ok(body) => body,
+            Err(err) => panic!("{}", err.to_string()),
+        };
+
+        let request_dt: DateTime<Utc> = Utc::now();
+
+        for message in body.items {
+            parser::print_message(message, delay_milliseconds)
+        }
+
+        next_page_token = body.nextPageToken.clone();
+
+        let now: DateTime<Utc> = Utc::now();
+        let time_elapsed = now - request_dt;
+        let time_to_wait =
+            chrono::Duration::milliseconds(body.pollingIntervalMillis.try_into().unwrap());
+        if time_elapsed < time_to_wait {
+            thread::sleep(time::Duration::from_millis(
+                (time_to_wait - time_elapsed)
+                    .num_milliseconds()
+                    .try_into()
+                    .unwrap(),
+            ));
         }
     }
 }

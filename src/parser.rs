@@ -3,46 +3,19 @@ use std::{thread, time};
 use ansi_term::Colour;
 use chrono::{DateTime, Utc};
 
-use crate::youtube_wrapper::Client;
+use crate::youtube_wrapper;
 
-pub fn print_youtube_messages(yt: Client, live_chat_id: &str, delay_milliseconds: i64) {
-    let mut next_page_token: String = String::from("");
-
-    loop {
-        let body = match yt.get_live_chat_messages(&live_chat_id, &next_page_token) {
-            Ok(body) => body,
-            Err(err) => panic!("{}", err.to_string()),
-        };
-
-        let request_dt: DateTime<Utc> = Utc::now();
-
-        // println!("{}", body.pageInfo.totalResults);
-        // println!("{}", body.items.len());
-
-        for message in body.items {
-            let (display_name, is_chat_sponsor) = match message.authorDetails {
-                Some(author_details) => (author_details.displayName, author_details.isChatSponsor),
-                None => continue,
-            };
-            let (published_at, display_message) = match message.snippet {
-                Some(snippet) => (snippet.publishedAt, snippet.displayMessage),
-                None => continue,
-            };
-
-            let published_dt = match DateTime::parse_from_rfc3339(&published_at.unwrap()) {
-                Ok(dt) => dt,
-                Err(err) => panic!("{}", err),
-            };
-            let time_to_wait = (published_dt + chrono::Duration::milliseconds(delay_milliseconds))
-                .with_timezone(&Utc)
-                - Utc::now();
-            if time_to_wait > chrono::Duration::milliseconds(0) {
-                thread::sleep(time::Duration::from_millis(
-                    time_to_wait.num_milliseconds().try_into().unwrap(),
-                ));
-            }
-
-            // println!("{} {}: {}", published_dt.with_timezone(&Local).format("%H:%M:%S").to_string(), display_name, display_message);
+pub fn print_message(message: youtube_wrapper::LiveChatMessage, delay_milliseconds: i64) {
+    let (display_name, is_chat_sponsor) = match message.authorDetails {
+        Some(author_details) => (author_details.displayName, author_details.isChatSponsor),
+        None => {
+            println!("{}", Colour::Red.bold().paint("Missing author details"));
+            return;
+        }
+    };
+    let (published_at, display_message) = match message.snippet {
+        Some(snippet) => (snippet.publishedAt, snippet.displayMessage),
+        None => {
             println!(
                 "{}: {}",
                 if is_chat_sponsor {
@@ -50,24 +23,33 @@ pub fn print_youtube_messages(yt: Client, live_chat_id: &str, delay_milliseconds
                 } else {
                     display_name.into()
                 },
-                display_message.unwrap()
+                Colour::Red.bold().paint("Missing message snippet")
             );
+            return;
         }
+    };
 
-        next_page_token = body.nextPageToken.clone();
-
-        // println!("{}", body.pollingIntervalMillis);
-        let now: DateTime<Utc> = Utc::now();
-        let time_elapsed = now - request_dt;
-        let time_to_wait =
-            chrono::Duration::milliseconds(body.pollingIntervalMillis.try_into().unwrap());
-        if time_elapsed < time_to_wait {
-            thread::sleep(time::Duration::from_millis(
-                (time_to_wait - time_elapsed)
-                    .num_milliseconds()
-                    .try_into()
-                    .unwrap(),
-            ));
-        }
+    // Delay print to maintain message position when printed
+    let published_dt = match DateTime::parse_from_rfc3339(&published_at.unwrap()) {
+        Ok(dt) => dt,
+        Err(err) => panic!("{}", err),
+    };
+    let time_to_wait = (published_dt + chrono::Duration::milliseconds(delay_milliseconds))
+        .with_timezone(&Utc)
+        - Utc::now();
+    if time_to_wait > chrono::Duration::milliseconds(0) {
+        thread::sleep(time::Duration::from_millis(
+            time_to_wait.num_milliseconds().try_into().unwrap(),
+        ));
     }
+
+    println!(
+        "{}: {}",
+        if is_chat_sponsor {
+            Colour::Green.bold().paint(display_name)
+        } else {
+            display_name.into()
+        },
+        display_message.unwrap()
+    );
 }
