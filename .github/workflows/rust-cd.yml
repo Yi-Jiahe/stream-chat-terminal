@@ -9,7 +9,7 @@ jobs:
   build-unix:
     strategy:
           matrix:
-            os: [ubuntu-latest]
+            os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     env:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -21,17 +21,13 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: stream-chat-terminal
-        path: target/debug/stream-chat-terminal
+    - run: mv target/debug/stream-chat-terminal target/debug/stream-chat-terminal_${{ matrix.os }}
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: 
-          target/debug/stream-chat-terminal
+        files:
+          target/debug/stream-chat-terminal_${{ matrix.os }}
 
   build-windows:
     runs-on: windows-latest
@@ -48,7 +44,6 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: stream-chat-terminal
         path: target/debug/stream-chat-terminal.exe
     - name: Release
       uses: softprops/action-gh-release@v1
