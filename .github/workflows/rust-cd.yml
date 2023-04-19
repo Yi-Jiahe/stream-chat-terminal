@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: GOOGLE_CLIENT_SECRET={{env.GOOGLE_CLIENT_SECRET}} GOOGLE_CLIENT_ID={{env.GOOGLE_CLIENT_ID}} GOOGLE_API_KEY={{env.GOOGLE_API_KEY}} cargo build --verbose
+      run: GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_CLIENT_SECRET }} GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }} GOOGLE_API_KEY=${{ env.GOOGLE_API_KEY }} cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
