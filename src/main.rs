@@ -27,7 +27,7 @@ use chrono::{DateTime, Utc};
 use stream_chat_terminal::config::Config;
 use stream_chat_terminal::google_oauth;
 use stream_chat_terminal::parser;
-use stream_chat_terminal::youtube_wrapper::Client;
+use stream_chat_terminal::youtube::client::Client;
 
 const MESSAGE_DELAY_MILLIS: i64 = 5000;
 

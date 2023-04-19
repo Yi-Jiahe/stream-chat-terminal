@@ -3,9 +3,9 @@ use std::{thread, time};
 use ansi_term::Colour;
 use chrono::{DateTime, Utc};
 
-use crate::youtube_wrapper;
+use crate::youtube::structs::LiveChatMessage;
 
-pub fn print_message(message: youtube_wrapper::LiveChatMessage, delay_milliseconds: i64) {
+pub fn print_message(message: LiveChatMessage, delay_milliseconds: i64) {
     let (display_name, is_chat_sponsor) = match message.authorDetails {
         Some(author_details) => (author_details.displayName, author_details.isChatSponsor),
         None => {
