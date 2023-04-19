@@ -6,7 +6,7 @@ const GOOGLE_API_KEY: &str = env!("GOOGLE_API_KEY");
 
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
-pub struct Client<S: HttpSend=Sender> {
+pub struct Client<S: HttpSend = Sender> {
     client: reqwest::blocking::Client,
     sender: S,
     access_token: Option<String>,
