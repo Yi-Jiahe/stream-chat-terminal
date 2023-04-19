@@ -50,10 +50,7 @@ fn main() {
         google_oauth::oauth_flow(&mut cfg);
     }
 
-    let yt = match Client::new(cfg.google_access_token) {
-        Ok(client) => client,
-        Err(err) => panic!("{}", err.to_string()),
-    };
+    let yt = Client::new(cfg.google_access_token);
 
     println!("Video ID: ");
 

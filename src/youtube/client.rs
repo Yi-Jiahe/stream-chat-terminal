@@ -6,19 +6,33 @@ const GOOGLE_API_KEY: &str = env!("GOOGLE_API_KEY");
 
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
-pub struct Client {
+pub struct Client<S: HttpSend=Sender> {
     client: reqwest::blocking::Client,
+    sender: S,
     access_token: Option<String>,
 }
 
-impl Client {
-    pub fn new(access_token: Option<String>) -> Result<Client, String> {
-        Ok(Client {
+impl Client<Sender> {
+    pub fn new(access_token: Option<String>) -> Client<Sender> {
+        Client {
             client: reqwest::blocking::Client::builder().build().unwrap(),
+            sender: Sender,
             access_token: access_token,
-        })
+        }
     }
+}
 
+impl<S: HttpSend> Client<S> {
+    pub fn with_sender(sender: S, access_token: Option<String>) -> Client<S> {
+        Client {
+            client: reqwest::blocking::Client::new(),
+            sender: sender,
+            access_token: access_token,
+        }
+    }
+}
+
+impl Client {
     fn get(&self, url: String) -> Result<reqwest::blocking::Response, reqwest::Error> {
         let req = if let Some(token) = &self.access_token {
             self.client
@@ -28,7 +42,7 @@ impl Client {
             self.client.get(url)
         };
 
-        let res = req.send()?;
+        let res = self.sender.send(req)?;
 
         return Ok(res);
     }
@@ -113,13 +127,13 @@ impl Client {
                 ..LiveChatMessage::default()
             };
 
-            let res = self
+            let req = self
                 .client
                 .post(url)
                 .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
-                .json(&body)
-                .send()
-                .unwrap();
+                .json(&body);
+
+            let res = self.sender.send(req).unwrap();
 
             if res.status() != reqwest::StatusCode::OK {
                 println!(
@@ -130,5 +144,22 @@ impl Client {
         } else {
             println!("Please complete the OAuth flow to post messages");
         }
+    }
+}
+
+pub trait HttpSend {
+    fn send(
+        &self,
+        request: reqwest::blocking::RequestBuilder,
+    ) -> Result<reqwest::blocking::Response, reqwest::Error>;
+}
+
+pub struct Sender;
+impl HttpSend for Sender {
+    fn send(
+        &self,
+        request: reqwest::blocking::RequestBuilder,
+    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
+        Ok(request.send()?)
     }
 }
