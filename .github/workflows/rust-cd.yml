@@ -9,11 +9,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    env:
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
     steps:
     - uses: actions/checkout@v3
-    - name: Setup Environment
-      run: export GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests
