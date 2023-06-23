@@ -1,24 +1,56 @@
 const GOOGLE_CLIENT_ID: &str = env!("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET: &str = env!("GOOGLE_CLIENT_SECRET");
 
+const AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
+const TOKEN_URL: &str = "https://www.googleapis.com/oauth2/v3/token";
+const REVOCATION_URL: &str = "https://oauth2.googleapis.com/revoke";
+
+const SCOPES: [&str; 3] = [
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+];
+
+use std::env;
+use std::io::{BufRead, BufReader, Write};
+use std::net::TcpListener;
+use core::future::Future;
+use core::pin::Pin;
+use url::Url;
+
+use google_youtube3::client::GetToken;
+
 use oauth2::{basic::BasicClient, TokenResponse};
-// Alternatively, this can be oauth2::curl::http_client or a custom.
 use oauth2::reqwest::http_client;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
     RevocationUrl, Scope, TokenUrl,
 };
-use std::env;
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpListener;
-use url::Url;
 
 use crate::config::Config;
 
-pub fn oauth_flow(cfg: &mut Config) {
-    let auth_url = AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())
+#[derive(Clone)]
+pub struct GoogleAuth {
+    pub retries: usize,
+}
+
+impl GetToken for GoogleAuth
+{
+    fn get_token<'a>(
+        &'a self,
+        scopes: &'a [&str],
+    ) -> Pin<Box<dyn Future<Output = Result<Option<String>, Box<dyn std::error::Error + Send + Sync>>> + Send + 'a>> {
+        Box::pin(async move {
+            let mut auth_token = Ok(None);
+            auth_token
+        })
+    }
+}
+
+fn GetToken(cfg: &mut Config) {
+    let auth_url = AuthUrl::new(AUTH_URL.to_string())
         .expect("Invalid authorization endpoint URL");
-    let token_url = TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
+    let token_url = TokenUrl::new(TOKEN_URL.to_string())
         .expect("Invalid token endpoint URL");
 
     // Set up the config for the Google OAuth2 process.
@@ -35,7 +67,7 @@ pub fn oauth_flow(cfg: &mut Config) {
     )
     // Google supports OAuth 2.0 Token Revocation (RFC-7009)
     .set_revocation_uri(
-        RevocationUrl::new("https://oauth2.googleapis.com/revoke".to_string())
+        RevocationUrl::new(REVOCATION_URL.to_string())
             .expect("Invalid revocation endpoint URL"),
     );
 

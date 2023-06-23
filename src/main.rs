@@ -20,15 +20,20 @@ struct Args {
 }
 
 use std::io;
+use std::default::Default;
+extern crate tokio;
+extern crate google_youtube3 as youtube3;
+use youtube3::{Result, Error};
+use youtube3::{YouTube, oauth2, hyper, hyper_rustls, chrono, FieldMask};
 
 use stream_chat_terminal::config::Config;
-use stream_chat_terminal::google_oauth;
+use stream_chat_terminal::google_oauth::GoogleAuth;
 use stream_chat_terminal::parser;
-use stream_chat_terminal::youtube_wrapper::Client;
 
 const MESSAGE_DELAY_MILLIS: i64 = 5000;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
     if args.config_path {
@@ -43,39 +48,28 @@ fn main() {
 
     dbg!(&cfg);
 
-    if args.google_oauth {
-        google_oauth::oauth_flow(&mut cfg);
-    }
-
-    let yt = match Client::new(cfg.google_access_token) {
-        Ok(client) => client,
-        Err(err) => panic!("{}", err.to_string()),
+    let auth = GoogleAuth{
+        retries: 3,
     };
+    let mut hub = YouTube::new(hyper::Client::builder().build(hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_or_http().enable_http1().enable_http2().build()), auth);
 
     println!("Video ID: ");
-
     let mut video_id = String::new();
-
     io::stdin()
         .read_line(&mut video_id)
         .expect("Failed to read line");
 
-    let live_chat_id = match yt.get_stream_id(&video_id) {
-        Ok(live_chat_id) => live_chat_id,
-        Err(err) => panic!("{}", err.to_string()),
-    };
+    let result = hub.videos().list(&vec!["snippet".into()])
+        .add_id(&video_id)
+        .doit().await;
+    
+    dbg!(result);
 
     if !args.post {
-        parser::print_youtube_messages(yt, &live_chat_id, MESSAGE_DELAY_MILLIS);
+        // let result = hub.live_chat_messages().list(result[0], &vec!["snippet".into()])
+        //      .profile_image_size(32)
+        //      .max_results(28)
+        //      .doit().await;
     } else {
-        loop {
-            let mut message = String::new();
-
-            io::stdin()
-                .read_line(&mut message)
-                .expect("Failed to read line");
-
-            yt.insert_live_chat_message(&live_chat_id, &message);
-        }
     }
 }

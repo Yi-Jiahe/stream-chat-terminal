@@ -18,4 +18,6 @@ https://crates.io/crates/oauth2
 
 I don't know why I didn't use it from the start
 
+Seems like it doesn't support requests w/o OAuth, i.e. the user needs to sign in even to perform API requests that do not require an OAuth token.
+
 ### Twitch 
