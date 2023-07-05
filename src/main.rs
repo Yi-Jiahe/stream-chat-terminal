@@ -22,6 +22,7 @@ struct Args {
 use std::io;
 use std::default::Default;
 extern crate tokio;
+extern crate google_clis_common;
 extern crate google_youtube3 as youtube3;
 use youtube3::{Result, Error};
 use youtube3::{YouTube, oauth2, hyper, hyper_rustls, chrono, FieldMask};
@@ -49,9 +50,7 @@ async fn main() {
 
     dbg!(&cfg);
 
-    let auth = GoogleAuth{
-        retries: 3,
-    };
+    
 
     let client = hyper::Client::builder().build(
         hyper_rustls::HttpsConnectorBuilder::new().with_native_roots()
@@ -60,6 +59,17 @@ async fn main() {
         .enable_http2()
         .build()
     );
+
+    // Client ID and secret are not treated as secret for desktop applications
+    // https://developers.google.com/identity/protocols/oauth2#installed
+    let google_application_secret = google_clis_common::application_secret_from_directory(&config_dir, "youtube3-secret.json",
+"{\"installed\":{\"client_id\":\"294311023223-9etdka9ubk21tshtp8modlfrapb08dvi.apps.googleusercontent.com\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_secret\":\"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\",\"redirect_uris\":[\"http://localhost\"]}}"                                             
+    ).unwrap();
+    let auth = oauth2::InstalledFlowAuthenticator::with_client(
+            google_application_secret,
+            oauth2::InstalledFlowReturnMethod::HTTPRedirect,
+            client.clone(),
+    ).persist_tokens_to_disk(format!("{}/youtube3", config_dir)).build().await.unwrap();
 
     let mut hub = YouTube::new(client, auth);
 
