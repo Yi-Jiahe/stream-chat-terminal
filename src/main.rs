@@ -25,10 +25,9 @@ extern crate tokio;
 extern crate google_clis_common;
 extern crate google_youtube3 as youtube3;
 use youtube3::{Result, Error};
-use youtube3::{YouTube, oauth2, hyper, hyper_rustls, chrono, FieldMask};
+use youtube3::{YouTube, oauth2, hyper, hyper_rustls};
 
 use stream_chat_terminal::config::Config;
-use stream_chat_terminal::google_oauth::GoogleAuth;
 use stream_chat_terminal::parser;
 
 const MESSAGE_DELAY_MILLIS: i64 = 5000;
