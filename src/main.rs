@@ -34,12 +34,13 @@ const MESSAGE_DELAY_MILLIS: i64 = 5000;
 
 #[tokio::main]
 async fn main() {
+    let configuration_file_path = confy::get_configuration_file_path("stream-chat-terminal", None)
+        .expect("Unable to get config file path");
+    let config_dir = configuration_file_path.parent().unwrap().to_str().unwrap();
+
     let args = Args::parse();
 
-    if args.config_path {
-        let configuration_file_path =
-            confy::get_configuration_file_path("stream-chat-terminal", None)
-                .expect("Unable to get config file path");
+    if args.config_path {            
         println!("{}", configuration_file_path.display());
         return;
     }
@@ -51,7 +52,16 @@ async fn main() {
     let auth = GoogleAuth{
         retries: 3,
     };
-    let mut hub = YouTube::new(hyper::Client::builder().build(hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_or_http().enable_http1().enable_http2().build()), auth);
+
+    let client = hyper::Client::builder().build(
+        hyper_rustls::HttpsConnectorBuilder::new().with_native_roots()
+        .https_or_http()
+        .enable_http1()
+        .enable_http2()
+        .build()
+    );
+
+    let mut hub = YouTube::new(client, auth);
 
     println!("Video ID: ");
     let mut video_id = String::new();
