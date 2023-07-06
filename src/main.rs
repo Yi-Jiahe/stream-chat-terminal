@@ -108,6 +108,27 @@ async fn main() {
             }
         }
     } else {
+        loop {
+            let mut display_message = String::new();
+            io::stdin()
+                .read_line(&mut display_message)
+                .expect("Failed to read line");
+
+            let message = youtube3::api::LiveChatMessage {
+                snippet: Some(youtube3::api::LiveChatMessageSnippet {
+                    type_: Some("textMessageEvent".into()), 
+                    live_chat_id: Some(active_live_chat_id.clone()),
+                    text_message_details: Some(youtube3::api::LiveChatTextMessageDetails  {
+                        message_text: Some(display_message),
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+
+            hub.live_chat_messages().insert(message)
+                .doit().await.unwrap();
+        }
     }
 }
 
