@@ -1,6 +1,4 @@
-use std::env;
-
-const GOOGLE_API_KEY: &str = env!("GOOGLE_API_KEY");
+const GOOGLE_API_KEY: &str = "";
 
 const BASE_URL: &str = "https://www.googleapis.com/youtube/v3";
 
