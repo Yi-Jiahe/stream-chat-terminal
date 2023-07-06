@@ -104,8 +104,6 @@ async fn main() {
                     &active_live_chat_id,
                     &vec!["snippet".into(), "authorDetails".into()],
                 )
-                .profile_image_size(32)
-                .max_results(28)
                 .page_token(&next_page_token)
                 .doit()
                 .await
