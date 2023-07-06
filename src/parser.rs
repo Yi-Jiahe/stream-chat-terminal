@@ -4,7 +4,7 @@ use ansi_term::Colour;
 use chrono::{DateTime, Utc};
 
 extern crate google_youtube3 as youtube3;
-use youtube3::api::{LiveChatMessage};
+use youtube3::api::LiveChatMessage;
 
 pub fn print_youtube_messages(messages: Vec<LiveChatMessage>, delay_milliseconds: i64) {
     for message in messages {
@@ -14,23 +14,25 @@ pub fn print_youtube_messages(messages: Vec<LiveChatMessage>, delay_milliseconds
                     Some(display_name) => display_name,
                     None => {
                         println!("Unable to retrieve display name");
-                        continue},
-                }, 
+                        continue;
+                    }
+                },
                 match author_details.is_chat_sponsor {
                     Some(is_chat_sponsor) => is_chat_sponsor,
                     None => false,
-                }),
+                },
+            ),
             None => {
                 println!("Unable to retrieve author details");
-                continue
-            },
+                continue;
+            }
         };
         let (published_at, display_message) = match message.snippet {
             Some(snippet) => (snippet.published_at, snippet.display_message),
             None => {
                 println!("Unable to retrieve message details");
-                continue
-            },
+                continue;
+            }
         };
 
         let published_dt = match DateTime::parse_from_rfc3339(&published_at.unwrap()) {
