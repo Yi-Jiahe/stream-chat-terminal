@@ -7,20 +7,12 @@ struct Args {
     /// Show config path
     #[clap(long, short, action)]
     config_path: bool,
-
-    /// Set config
-    #[clap(long, short, action)]
-    set_config: bool,
-
-    #[clap(long, short, action)]
-    google_oauth: bool,
-
+    
     #[clap(long, short, action)]
     post: bool,
 }
 
 use std::io;
-use std::default::Default;
 extern crate tokio;
 extern crate google_clis_common;
 extern crate google_youtube3 as youtube3;
@@ -49,8 +41,6 @@ async fn main() {
 
     dbg!(&cfg);
 
-    
-
     let client = hyper::Client::builder().build(
         hyper_rustls::HttpsConnectorBuilder::new().with_native_roots()
         .https_or_http()
@@ -78,11 +68,13 @@ async fn main() {
         .read_line(&mut video_id)
         .expect("Failed to read line");
 
-    let result = hub.videos().list(&vec!["snippet".into()])
-        .add_id(&video_id)
-        .doit().await;
+    let (_, video_list_response) = hub.videos().list(&vec!["liveStreamingDetails".into()])
+        .add_id(video_id.trim())
+        .doit().await.unwrap();
+    let video = video_list_response.items.unwrap().pop().unwrap();
+    let active_live_chat_id = video.live_streaming_details.unwrap().active_live_chat_id.unwrap();
     
-    dbg!(result);
+    dbg!(&active_live_chat_id);
 
     if !args.post {
         // let result = hub.live_chat_messages().list(result[0], &vec!["snippet".into()])
@@ -92,3 +84,4 @@ async fn main() {
     } else {
     }
 }
+
