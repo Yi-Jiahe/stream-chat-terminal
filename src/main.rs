@@ -7,16 +7,17 @@ struct Args {
     /// Show config path
     #[clap(long, short, action)]
     config_path: bool,
-    
+
     #[clap(long, short, action)]
     post: bool,
 }
 
 use std::io;
+use std::{thread, time};
+use chrono::{DateTime, Utc};
 extern crate tokio;
 extern crate google_clis_common;
 extern crate google_youtube3 as youtube3;
-use youtube3::{Result, Error};
 use youtube3::{YouTube, oauth2, hyper, hyper_rustls};
 
 use stream_chat_terminal::config::Config;
@@ -60,7 +61,7 @@ async fn main() {
             client.clone(),
     ).persist_tokens_to_disk(format!("{}/youtube3", config_dir)).build().await.unwrap();
 
-    let mut hub = YouTube::new(client, auth);
+    let hub = YouTube::new(client, auth);
 
     println!("Video ID: ");
     let mut video_id = String::new();
@@ -77,10 +78,35 @@ async fn main() {
     dbg!(&active_live_chat_id);
 
     if !args.post {
-        // let result = hub.live_chat_messages().list(result[0], &vec!["snippet".into()])
-        //      .profile_image_size(32)
-        //      .max_results(28)
-        //      .doit().await;
+        let mut next_page_token: String = String::from("");
+
+        loop {
+            let request_dt: DateTime<Utc> = Utc::now();
+
+            let (_, live_chat_message_list_response) = hub.live_chat_messages().list(&active_live_chat_id, &vec!["snippet".into(), "authorDetails".into()])
+            .profile_image_size(32)
+            .max_results(28)
+            .page_token(&next_page_token)
+            .doit().await.unwrap();
+
+            let live_chat_messages = live_chat_message_list_response.items.unwrap();
+
+            parser::print_youtube_messages(live_chat_messages, MESSAGE_DELAY_MILLIS);
+
+            next_page_token = live_chat_message_list_response.next_page_token.unwrap();
+
+            let time_elapsed = Utc::now() - request_dt;
+            let time_to_wait =
+                chrono::Duration::milliseconds(live_chat_message_list_response.polling_interval_millis.unwrap().into());
+            if time_elapsed < time_to_wait {
+                thread::sleep(time::Duration::from_millis(
+                    (time_to_wait - time_elapsed)
+                        .num_milliseconds()
+                        .try_into()
+                        .unwrap(),
+                ));
+            }
+        }
     } else {
     }
 }
