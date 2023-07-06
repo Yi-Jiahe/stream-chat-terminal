@@ -50,7 +50,7 @@ async fn main() {
     // https://developers.google.com/identity/protocols/oauth2#installed
     let google_application_secret = google_clis_common::application_secret_from_directory(&config_dir, "youtube3-secret.json",
 "{\"installed\":{\"client_id\":\"294311023223-9etdka9ubk21tshtp8modlfrapb08dvi.apps.googleusercontent.com\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_secret\":\"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\",\"redirect_uris\":[\"http://localhost\"]}}"                                             
-    ).unwrap();
+    ).expect("Unable to load application secret");
     let auth = oauth2::InstalledFlowAuthenticator::with_client(
         google_application_secret,
         oauth2::InstalledFlowReturnMethod::HTTPRedirect,
@@ -59,7 +59,7 @@ async fn main() {
     .persist_tokens_to_disk(format!("{}/youtube3", config_dir))
     .build()
     .await
-    .unwrap();
+    .expect("Unable to build auth client");
 
     let hub = YouTube::new(client, auth);
 
@@ -75,23 +75,30 @@ async fn main() {
         .add_id(video_id.trim())
         .doit()
         .await
-        .unwrap();
-    let video = video_list_response.items.unwrap().pop().unwrap();
+        .expect("Video list request failed");
+    let video = video_list_response
+        .items
+        .expect("No items returned from video list response")
+        .pop()
+        .expect("No videos returned with given video id");
     let active_live_chat_id = video
         .live_streaming_details
-        .unwrap()
+        .expect("Video has no live streaming details")
         .active_live_chat_id
-        .unwrap();
-
-    dbg!(&active_live_chat_id);
+        .expect("No active live chat id");
 
     if !args.post {
         let mut next_page_token: String = String::from("");
+        let mut retries = 0;
 
         loop {
+            if retries > 5 {
+                panic!("List messages failed 5 times in a row")
+            }
+
             let request_dt: DateTime<Utc> = Utc::now();
 
-            let (_, live_chat_message_list_response) = hub
+            let (_, live_chat_message_list_response) = match hub
                 .live_chat_messages()
                 .list(
                     &active_live_chat_id,
@@ -102,20 +109,38 @@ async fn main() {
                 .page_token(&next_page_token)
                 .doit()
                 .await
-                .unwrap();
+            {
+                Ok((response, live_chat_message_list_response)) => {
+                    (response, live_chat_message_list_response)
+                }
+                _ => {
+                    retries = retries + 1;
+                    continue;
+                }
+            };
 
-            let live_chat_messages = live_chat_message_list_response.items.unwrap();
+            let live_chat_messages = match live_chat_message_list_response.items {
+                Some(live_chat_messages) => live_chat_messages,
+                None => {
+                    retries = retries + 1;
+                    continue;
+                }
+            };
 
             parser::print_youtube_messages(live_chat_messages, MESSAGE_DELAY_MILLIS);
 
-            next_page_token = live_chat_message_list_response.next_page_token.unwrap();
+            next_page_token = match live_chat_message_list_response.next_page_token {
+                Some(next_page_token) => next_page_token,
+                None => "".to_string(),
+            };
 
             let time_elapsed = Utc::now() - request_dt;
             let time_to_wait = chrono::Duration::milliseconds(
-                live_chat_message_list_response
-                    .polling_interval_millis
-                    .unwrap()
-                    .into(),
+                match live_chat_message_list_response.polling_interval_millis {
+                    Some(polling_interval_millis) => polling_interval_millis,
+                    None => MESSAGE_DELAY_MILLIS.try_into().unwrap(),
+                }
+                .into(),
             );
             if time_elapsed < time_to_wait {
                 thread::sleep(time::Duration::from_millis(
@@ -125,6 +150,8 @@ async fn main() {
                         .unwrap(),
                 ));
             }
+
+            retries = 0
         }
     } else {
         loop {
