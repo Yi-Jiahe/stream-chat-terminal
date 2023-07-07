@@ -4,6 +4,8 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    video_id: String,
+
     /// Show config path
     #[clap(long, short, action)]
     config_path: bool,
@@ -63,16 +65,10 @@ async fn main() {
 
     let hub = YouTube::new(client, auth);
 
-    println!("Video ID: ");
-    let mut video_id = String::new();
-    io::stdin()
-        .read_line(&mut video_id)
-        .expect("Failed to read line");
-
     let (_, video_list_response) = hub
         .videos()
         .list(&vec!["liveStreamingDetails".into()])
-        .add_id(video_id.trim())
+        .add_id(args.video_id.trim())
         .doit()
         .await
         .expect("Video list request failed");
