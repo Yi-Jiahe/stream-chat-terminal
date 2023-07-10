@@ -72,21 +72,30 @@ async fn main() {
         .doit()
         .await
         .expect("Video list request failed");
-    let video = video_list_response
+    let video = match video_list_response
         .items
         .expect("No items returned from video list response")
-        .pop()
-        .expect("No videos returned with given video id");
-    let active_live_chat_id = match video
-        .live_streaming_details
-        .expect("Video has no live streaming details")
-        .active_live_chat_id {
-            Some(active_live_chat_id) => active_live_chat_id,
+        .pop() {
+            Some(video) => video,
             None => {
-                println!("{}", "No active live chat id");
+                println!("No videos returned with given video id");
                 return;
             }
         };
+    let live_streaming_details = match video.live_streaming_details {
+        Some(live_streaming_details) => live_streaming_details,
+        None => {
+            println!("{}", "Video has no live streaming details");
+            return;
+        }
+    };
+    let active_live_chat_id = match live_streaming_details.active_live_chat_id {
+        Some(active_live_chat_id) => active_live_chat_id,
+        None => {
+            println!("{}", "No active live chat id");
+            return;
+        }
+    };
 
     if !args.post {
         let mut next_page_token: String = String::from("");
