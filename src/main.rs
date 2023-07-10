@@ -77,11 +77,16 @@ async fn main() {
         .expect("No items returned from video list response")
         .pop()
         .expect("No videos returned with given video id");
-    let active_live_chat_id = video
+    let active_live_chat_id = match video
         .live_streaming_details
         .expect("Video has no live streaming details")
-        .active_live_chat_id
-        .expect("No active live chat id");
+        .active_live_chat_id {
+            Some(active_live_chat_id) => active_live_chat_id,
+            None => {
+                println!("{}", "No active live chat id");
+                return;
+            }
+        };
 
     if !args.post {
         let mut next_page_token: String = String::from("");
