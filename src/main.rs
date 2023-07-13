@@ -14,6 +14,8 @@ struct Args {
     post: bool,
 }
 
+const RETRY_WAIT_TIME_MS: time::Duration = time::Duration::from_millis(300);
+
 use chrono::{DateTime, Utc};
 use std::io;
 use std::{thread, time};
@@ -102,10 +104,6 @@ async fn main() {
         let mut retries = 0;
 
         loop {
-            if retries > 5 {
-                panic!("List messages failed 5 times in a row")
-            }
-
             let request_dt: DateTime<Utc> = Utc::now();
 
             let (_, live_chat_message_list_response) = match hub
@@ -122,6 +120,11 @@ async fn main() {
                     (response, live_chat_message_list_response)
                 }
                 _ => {
+                    if retries > 5 {
+                        panic!("Failed to retrieve messages 5 times in a row");
+                    }
+                    println!("Live chat message list request failed, retrying...");
+                    thread::sleep(RETRY_WAIT_TIME_MS);
                     retries = retries + 1;
                     continue;
                 }
@@ -135,6 +138,11 @@ async fn main() {
             let live_chat_messages = match live_chat_message_list_response.items {
                 Some(live_chat_messages) => live_chat_messages,
                 None => {
+                    if retries > 5 {
+                        panic!("Failed to retrieve messages 5 times in a row");
+                    }
+                    println!("Live chat message list missing from response, retrying...");
+                    thread::sleep(RETRY_WAIT_TIME_MS);
                     retries = retries + 1;
                     continue;
                 }
