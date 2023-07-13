@@ -127,6 +127,11 @@ async fn main() {
                 }
             };
 
+            if let Some(offline_at) = live_chat_message_list_response.offline_at {
+                println!("Stream went offline at {}", offline_at);
+                return;
+            }
+
             let live_chat_messages = match live_chat_message_list_response.items {
                 Some(live_chat_messages) => live_chat_messages,
                 None => {
