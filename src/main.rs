@@ -67,13 +67,25 @@ async fn main() {
 
     let hub = YouTube::new(client, auth);
 
-    let (_, video_list_response) = hub
-        .videos()
-        .list(&vec!["liveStreamingDetails".into()])
-        .add_id(args.video_id.trim())
-        .doit()
-        .await
-        .expect("Video list request failed");
+    let mut retries = 0;
+    let video_list_response = loop {
+        match hub.videos()
+            .list(&vec!["liveStreamingDetails".into()])
+            .add_id(args.video_id.trim())
+            .doit()
+            .await {
+                Ok((_, video_list_response)) => break video_list_response,
+                Err(e) => {
+                    dbg!(e);
+                    println!("Video list request failed, retrying...");
+                    thread::sleep(RETRY_WAIT_TIME_MS);
+                    retries += 1;
+                }
+        };
+        if retries > 3 {
+            panic!("Failed to retrieve videos after 3 attempts");
+        }
+    };
     let video = match video_list_response
         .items
         .expect("No items returned from video list response")
@@ -119,7 +131,8 @@ async fn main() {
                 Ok((response, live_chat_message_list_response)) => {
                     (response, live_chat_message_list_response)
                 }
-                _ => {
+                Err(e) => {
+                    dbg!(e);
                     if retries > 5 {
                         panic!("Failed to retrieve messages 5 times in a row");
                     }
