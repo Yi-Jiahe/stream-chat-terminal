@@ -4,15 +4,8 @@ Display your stream chat in the terminal!
 
 Polls YouTube chat list API to stream chat to your terminal.
 
-## To-Do
+## Setup
 
-### YouTube
+A client secret for desktop application has been provided for the application. However, at ~5 units per call of the live chat messages list endpoint and a max quota of 10,000, the quota is easily exceeded within 2 hours at ~0.3 calls per second.
 
-- [ ] Switch to [google-youtube3](https://crates.io/crates/google-youtube3) crate for youtube functions.
-
-I don't know why I didn't use it from the start.
-Seems like it doesn't support requests w/o OAuth, i.e. the user needs to sign in even to perform API requests that do not require an OAuth token.
-
-[google-youtube3-cli](https://crates.io/crates/google-youtube3-cli) is the cli generated from the wrapper. [Src](https://github.com/Byron/google-apis-rs/tree/main/gen/youtube3-cli) [Engine generation source](https://github.com/Byron/google-apis-rs/blob/main/src/generator/templates/cli/lib/engine.mako)
-
-### Twitch 
+In case you need to provide your own client secret to bypass this shared quota, you can place the client secret downloaded as json from the gcp console in the application config directory as `youtube3-secret.json`. The application config directory can be quried with the `--config-path` flag.
